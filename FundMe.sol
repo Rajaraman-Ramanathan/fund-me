@@ -3,22 +3,24 @@ pragma solidity ^0.8.18;
 
 import {PriceConverter} from "./PriceConverter.sol";
 
+error NotOwner();
+
 contract FundMe {
     // uint256 public myValue = 1;
     using PriceConverter for uint256;
-    uint256 public minimumUsd = 5;
+    uint256 public constant MINIMUM_USD = 5;
     address [] public funders;
-    address public owner;
+    address public i_owner;
     mapping(address => uint256) public addressToAmountFunded;
 
     constructor() {
-        owner = msg.sender;
+        i_owner = msg.sender;
     }
 
     function fund() public payable {
         // Allow users to send minimum of 1 ETH
         // myValue = myValue + 2; // example of revert
-        require(msg.value.getConversionRate() >= minimumUsd, "Didn't send enough ETH"); // require statement to used to check, and when it fails it will undo
+        require(msg.value.getConversionRate() >= MINIMUM_USD, "Didn't send enough ETH"); // require statement to used to check, and when it fails it will undo
         funders.push(msg.sender);
         addressToAmountFunded[msg.sender] += msg.value;
     }
@@ -35,7 +37,18 @@ contract FundMe {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Must be an Owner!!");
+       // require(msg.sender == i_owner, "Must be an Owner!!");
+       if(msg.sender != i_owner) {
+        revert NotOwner();
+       }
         _;
+    }
+
+    receive() external payable {
+        fund();
+    }
+
+    fallback() external payable {
+        fund();
     }
 }
